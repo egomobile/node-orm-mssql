@@ -225,7 +225,7 @@ export class MSSQLDataAdapter extends DataAdapterBase {
         }
 
         // build query
-        let q = `SELECT ${topPrefix}${projection} FROM ${table}`;
+        let q = `SELECT ${topPrefix}${projection} FROM [${table}]`;
         if (where?.length) {
             q += ` WHERE (${where})`;
         }
@@ -369,7 +369,7 @@ export class MSSQLDataAdapter extends DataAdapterBase {
             }
 
             const queryResult = await this.query(
-                `INSERT INTO ${table} (${columnList}) VALUES (${valueList});${lastInsertStatment}`,
+                `INSERT INTO [${table}] (${columnList}) VALUES (${valueList});${lastInsertStatment}`,
                 ...values,
             );
 
@@ -523,7 +523,7 @@ export class MSSQLDataAdapter extends DataAdapterBase {
 
             // build and run query
             await this.query(
-                `DELETE FROM ${table} WHERE (${where});`,
+                `DELETE FROM [${table}] WHERE (${where});`,
                 ...idValues,
             );
 
@@ -614,7 +614,7 @@ export class MSSQLDataAdapter extends DataAdapterBase {
 
             // now build and run query
             await this.query(
-                `UPDATE ${table} SET ${set} WHERE (${where});`,
+                `UPDATE [${table}] SET ${set} WHERE (${where});`,
                 ...[...values, ...idValues],
             );
 

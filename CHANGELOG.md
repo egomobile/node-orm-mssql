@@ -1,5 +1,5 @@
 # Change Log (@egomobile/orm-mssql)
 
-## 0.0.0
+## 0.0.1
 
-- [not released yet]
+- initial release

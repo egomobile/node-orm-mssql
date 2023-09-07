@@ -1,6 +1,6 @@
 {
   "name": "@egomobile/orm-mssql",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "A MSSQL data adapter and other utilities for @egomobile/orm module.",
   "main": "lib/index.js",
   "engines": {
