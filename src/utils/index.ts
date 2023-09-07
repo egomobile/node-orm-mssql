@@ -14,13 +14,13 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import fs from "node:fs";
+import mssql from "mssql";
 import path from "node:path";
 import sanitizeFilename from "sanitize-filename";
 import { pascalCase } from "change-case";
 import type { INewMigrationInfo, MSSQLClientLike } from "../types";
 import type { Nilable } from "@egomobile/orm/lib/types/internal";
 import { isNil } from "./internal";
-import mssql from "mssql";
 
 /**
  * Options for 'createNewMigration()' and 'createNewMigrationSync()' functions.
@@ -243,7 +243,7 @@ function getOptionsForCreateNewMigrationOrThrow(name: string, options: Nilable<I
 
     let source: string;
     if (options?.typescript) {
-        source = `${getStringBuilderValue("header", headerBuilder)}import type { MigrationAction } from '@egomobile/orm-pg';
+        source = `${getStringBuilderValue("header", headerBuilder)}import type { MigrationAction } from '@egomobile/orm-mssql';
 
 /**
  * Function to UP-grade the database.

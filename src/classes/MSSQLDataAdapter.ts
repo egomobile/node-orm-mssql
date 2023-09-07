@@ -20,29 +20,68 @@ import { DataAdapterBase, IFindOneOptions, IFindOptions, NULL, isExplicitNull } 
 import type { Constructor, List, Nilable } from "@egomobile/orm/lib/types/internal";
 import type { DebugAction, MSSQLClientLike } from "../types";
 import type { DebugActionWithoutSource, Getter } from "../types/internal";
-import { asList, isIterable, isNil, toDebugActionSafe } from "../utils/internal";
 import { isMSSQLClientLike } from "../utils";
+import { asList, isIterable, isNil, toDebugActionSafe } from "../utils/internal";
 
 interface IBuildFindQueryOptions extends IMSSQLFindOptions {
     shouldNotWrapFields?: boolean;
 }
 
+/**
+ * Options for 'find()' method of a 'MSSQLDataAdapter' instance.
+ */
 export interface IMSSQLFindOptions extends IMSSQLFindOneOptions, IFindOptions {
+    /**
+     * @inheritdoc
+     */
     fields?: Nilable<string[]>;
+    /**
+     * @inheritdoc
+     */
     params?: Nilable<any[]>;
+    /**
+     * Sort settings.
+     */
     sort?: Nilable<Record<string, "ASC" | "DESC">>;
+    /**
+     * @inheritdoc
+     */
     where?: Nilable<string>;
 }
 
+/**
+ * Options for 'findOne()' method of a 'MSSQLDataAdapter' instance.
+ */
 export interface IMSSQLFindOneOptions extends IFindOneOptions {
+    /**
+     * @inheritdoc
+     */
     fields?: Nilable<string[]>;
+    /**
+     * @inheritdoc
+     */
     params?: Nilable<any[]>;
+    /**
+     * Sort settings.
+     */
     sort?: Nilable<Record<string, "ASC" | "DESC">>;
+    /**
+     * @inheritdoc
+     */
     where?: Nilable<string>;
 }
 
+/**
+ * Options for instance of 'MSSQLDataAdapter' class.
+ */
 export interface IMSSQLDataAdapterOptions {
+    /**
+     * The underlying client or a function, which returns it.
+     */
     client?: Nilable<MSSQLClientLike | Getter<MSSQLClientLike> | MSSQLClientConfig>;
+    /**
+     * The optional debug action / handler.
+     */
     debug?: Nilable<DebugAction>;
 }
 
@@ -57,8 +96,14 @@ interface ITransformValueOptions {
     value: any;
 }
 
+/**
+ * A possible value for a mssql client/pool configuration.
+ */
 export type MSSQLClientConfig = mssql.config | mssql.ConnectionPool;
 
+/**
+ * A valid option value for 'MSSQLDataAdapter' class.
+ */
 export type MSSQLDataAdapterOptionsValue = IMSSQLDataAdapterOptions | MSSQLClientLike;
 
 type SyncValueTransformer = (options: ITransformValueOptions) => any;
@@ -81,10 +126,18 @@ function transformValueUsingJSNull({ direction, value }: ITransformValueOptions)
     }
 }
 
+/**
+ * A data adapter which is written for Microsoft SQL databases.
+ */
 export class MSSQLDataAdapter extends DataAdapterBase {
     private readonly clientGetter: Getter<MSSQLClientLike>;
     private readonly debug: DebugActionWithoutSource;
 
+    /**
+     * Initializes a new instance of that class.
+     *
+     * @param {Nilable<PostgreSQLDataAdapterOptionsValue>} [optionsOrClient] The options or the client/pool.
+     */
     public constructor(optionsOrClient?: Nilable<MSSQLDataAdapterOptionsValue>) {
         super();
 
@@ -194,6 +247,9 @@ export class MSSQLDataAdapter extends DataAdapterBase {
         };
     }
 
+    /**
+     * @inheritdoc
+     */
     async count<T extends unknown = any>(type: Constructor<T>, options?: Nilable<IFindOptions>): Promise<number> {
         const {
             params,
@@ -211,7 +267,7 @@ export class MSSQLDataAdapter extends DataAdapterBase {
             recordsets
         } = await this.query(query, ...params);
 
-        return Number((recordsets as mssql.IRecordSet<any>)[0].c);
+        return Number((recordsets as mssql.IRecordSet<any>)[0][0].c);
     }
 
     private get defaultValueTransformer(): SyncValueTransformer {
@@ -222,7 +278,10 @@ export class MSSQLDataAdapter extends DataAdapterBase {
         return transformValueUsingDbNull;
     }
 
-    async find<T extends unknown = any>(type: Constructor<T>, options?: Nilable<IFindOptions>): Promise<T[]> {
+    /**
+     * @inheritdoc
+     */
+    find<T extends unknown = any>(type: Constructor<T>, options?: Nilable<IFindOptions>): Promise<T[]> {
         const {
             params,
             query
@@ -231,6 +290,9 @@ export class MSSQLDataAdapter extends DataAdapterBase {
         return this.queryAndMap(type, query, ...params);
     }
 
+    /**
+     * @inheritdoc
+     */
     async findOne<T extends unknown = any>(type: Constructor<T>, options?: Nilable<IFindOneOptions>): Promise<T | null> {
         const entities = await this.find(type, {
             ...(options || {}),
@@ -240,6 +302,11 @@ export class MSSQLDataAdapter extends DataAdapterBase {
         return entities[0] || null;
     }
 
+    /**
+     * Gets the underlying client / pool.
+     *
+     * @returns {Promise<MSSQLClientLike>} The promise with the client.
+     */
     public getClient(): Promise<MSSQLClientLike> {
         return Promise.resolve(this.clientGetter());
     }
@@ -252,6 +319,9 @@ export class MSSQLDataAdapter extends DataAdapterBase {
         return !isNil(entity[columnName]);
     }
 
+    /**
+     * @inheritdoc
+     */
     async insert<T extends unknown = any>(entityOrEntities: T | List<T>): Promise<T | T[]> {
         if (isNil(entityOrEntities)) {
             throw new TypeError("entityOrEntities cannot be (null) or (undefined)");
@@ -354,6 +424,14 @@ export class MSSQLDataAdapter extends DataAdapterBase {
         }
     }
 
+    /**
+     * Invokes a raw SQL query.
+     *
+     * @param {string} sql The SQL query,
+     * @param {any[]} [values] One or more values for the placeholders in the SQL query.
+     *
+     * @returns {Promise<mssql.IResult<any>>} The promise with the result.
+     */
     async query(sql: string, ...values: any[]): Promise<mssql.IResult<any>> {
         this.debug(`SQL QUERY: ${sql}`, "🐞");
 
@@ -371,6 +449,9 @@ export class MSSQLDataAdapter extends DataAdapterBase {
         return request.query(sql);
     }
 
+    /**
+     * @inheritdoc
+     */
     async queryAndMap<T extends unknown = any>(type: Constructor<any>, sql: string, ...values: any[]): Promise<any[]> {
         this.debug(`SQL QUERY AND MAP: ${sql}`, "🐞");
 
@@ -398,6 +479,9 @@ export class MSSQLDataAdapter extends DataAdapterBase {
         return entities;
     }
 
+    /**
+     * @inheritdoc
+     */
     async remove<T extends unknown = any>(entityOrEntities: T | List<T>): Promise<T | T[]> {
         if (isNil(entityOrEntities)) {
             throw new TypeError("entityOrEntities cannot be (null) or (undefined)");
@@ -465,6 +549,9 @@ export class MSSQLDataAdapter extends DataAdapterBase {
         return this.defaultValueTransformer(options);
     }
 
+    /**
+     * @inheritdoc
+     */
     async update<T extends unknown = any>(entityOrEntities: T | List<T>): Promise<T | T[]> {
         if (isNil(entityOrEntities)) {
             throw new TypeError("entityOrEntities cannot be (null) or (undefined)");

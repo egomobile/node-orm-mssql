@@ -26,17 +26,53 @@ import { DebugAction, IMSSQLMigration } from "../types";
 import { isNil, setupMigrationModuleProp, toDebugActionSafe } from "../utils/internal";
 import { isMSSQLClientLike } from "../utils";
 
+/**
+ * Options for 'down()' method of a 'MSSQLMigrationContext' instance.
+ */
 export interface IDownOptions {
+    /**
+     * Do not use transaction while migraion by default.
+     */
     noTransactions?: Nilable<boolean>;
+    /**
+     * The optional timestamp to downgrade to.
+     */
     timestamp?: Nilable<number>;
 }
 
+/**
+ * Options for 'MSSQLMigrationContext' class.
+ */
 export interface IMSSQLMigrationContextOptions {
+    /**
+     * Custom options for the adapter.
+     */
     adapter?: Nilable<MSSQLDataAdapterOptionsValue>;
+    /**
+     * The optional debug action / handler.
+     */
     debug?: Nilable<DebugAction>;
+    /**
+     * Migrations to use.
+     *
+     * If string: The path to the migration files. Relative paths will be mapped to current working directory.
+     * If array: The list of migrations.
+     * If function: The function, which returns the list of migrations.
+     *
+     * Default: Subdirectory 'migration' inside current working directory.
+     */
     migrations?: Nilable<string | IMSSQLMigration[] | Getter<IMSSQLMigration[]>>;
+    /**
+     * Do not use transaction while migraion by default.
+     */
     noTransactions?: Nilable<boolean>;
+    /**
+     * The name of the migration table. Default: 'migrations'
+     */
     table?: Nilable<string>;
+    /**
+     * Include TypeScript (.ts) files instead of .js
+     */
     typescript?: Nilable<boolean>;
 }
 
@@ -54,15 +90,32 @@ interface IRunMigrationsOptions {
     type: string;
 }
 
+/**
+ * Options for 'up()' method of a 'MSSQLMigrationContext' instance.
+ */
 export interface IUpOptions {
+    /**
+     * Do not use transaction while migraion by default.
+     */
     noTransactions?: Nilable<boolean>;
+    /**
+     * The optional timestamp to downgrade to.
+     */
     timestamp?: Nilable<number>;
 }
 
+/**
+ * A MSSQL migration context.
+ */
 export class MSSQLMigrationContext {
     private readonly debug: DebugActionWithoutSource;
     private readonly noTransactions: boolean;
 
+    /**
+     * Initializes a new instance of that class.
+     *
+     * @param {IMSSQLMigrationContextOptions} options The options.
+     */
     public constructor(public readonly options: IMSSQLMigrationContextOptions) {
         if (typeof options !== "object") {
             throw new TypeError("options must be of type object");
@@ -104,6 +157,11 @@ export class MSSQLMigrationContext {
         };
     }
 
+    /**
+     * Downgrades the database.
+     *
+     * @param {Nilable<IDownOptions>} [options] The custom options.
+     */
     public async down(options?: Nilable<IDownOptions>) {
         const shouldNotUseTransactions = options?.noTransactions ?? this.noTransactions;
 
@@ -246,7 +304,7 @@ export class MSSQLMigrationContext {
         this.debug(`Will execute migrations of type ${type} ...`, "ℹ️");
 
         if (!noTransactions) {
-            await context.query("START TRANSACTION;");
+            await context.query("BEGIN TRANSACTION;");
         }
 
         try {
@@ -286,6 +344,11 @@ export class MSSQLMigrationContext {
         }
     }
 
+    /**
+     * Upgrades the database.
+     *
+     * @param {Nilable<IUpOptions>} [options] The custom options.
+     */
     public async up(options?: Nilable<IUpOptions>) {
         const shouldNotUseTransactions = options?.noTransactions ?? this.noTransactions;
 
